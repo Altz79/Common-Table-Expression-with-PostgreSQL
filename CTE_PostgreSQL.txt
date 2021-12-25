@@ -1,0 +1,25 @@
+WITH status_count AS (SELECT 
+group_name,
+COUNT(status) as all_test_cases,
+COUNT(CASE WHEN status = 'OK' THEN 1 else null END) as passed_test_cases
+FROM test_cases
+GROUP BY group_name),
+
+total_value_sum AS (SELECT
+g.name,
+SUM(g.test_value) as total_value
+FROM test_groups AS g 
+WHERE status = 'OK'
+LEFT JOIN test_cases AS c
+ON c.group_name = g.name
+GROUP BY g.name)
+
+SELECT
+total_value_sum.name,
+coalesce(status_count.all_test_cases, 0) as all_test_cases,
+coalesce(status_count.passed_test_cases, 0) as passed_test_cases,
+total_value_sum.total_value
+FROM total_value_sum
+LEFT JOIN status_count
+ON status_count.group_name = total_value_sum.name
+ORDER BY total_value_sum.total_value;
